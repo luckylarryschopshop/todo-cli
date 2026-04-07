@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo List</title>
+  <style>
+    body { background:#0d1117; color:#e6edf3; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; padding:20px; }
+    h1 { color:#f97316; margin-bottom:10px; }
+    .input-group { display:flex; gap:10px; margin-bottom:20px; width:100%; max-width:400px; }
+    input[type="text"] { flex:1; padding:10px; border: none; border-radius:4px; background:#1e293b; color:#e6edf3; }
+    button { padding:10px 15px; background:#f97316; color:#0d1117; border:none; border-radius:4px; cursor:pointer; }
+    .filters { margin-bottom:10px; display:flex; gap:10px; }
+    .filters button { background:transparent; border:1px solid #f97316; padding:5px 10px; border-radius:4px; }
+    .task-list { width:100%; max-width:400px; list-style:none; padding:0; margin:0; }
+    .task { display:flex; align-items:center; justify-content:space-between; background:#1e293b; padding:10px; border-radius:4px; margin-bottom:5px; }
+    .task input[type="checkbox"] { margin-right:10px; }
+    .task .delete { background:transparent; border:none; color:#f97316; font-size:16px; cursor:pointer; }
+    .count { margin-top:10px; font-size:14px; }
+  </style>
+</head>
+<body>
+  <h1>Todo List</h1>
+  <div class="input-group">
+    <input type="text" id="taskInput" placeholder="Add new task..." />
+    <button onclick="addTask()">Add</button>
+  </div>
+  <div class="filters">
+    <button onclick="filterTasks('all')">All</button>
+    <button onclick="filterTasks('active')">Active</button>
+    <button onclick="filterTasks('completed')">Completed</button>
+  </div>
+  <ul id="taskList" class="task-list"></ul>
+  <button onclick="clearCompleted()" style="margin-top:10px;">Clear Completed</button>
+  <div class="count" id="taskCount"></div>
+
+  <script>
+    const taskList = document.getElementById('taskList');
+    const taskInput = document.getElementById('taskInput');
+    const taskCount = document.getElementById('taskCount');
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function renderTasks(filter = 'all') {
+      taskList.innerHTML = '';
+      let filtered = tasks;
+      if (filter === 'active') filtered = tasks.filter(t => !t.completed);
+      if (filter === 'completed') filtered = tasks.filter(t => t.completed);
+      filtered.forEach((task, index) => {
+        const li = document.createElement('li');
+        li.className = 'task';
+        li.innerHTML = `
+          <label><input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleComplete(${index})"> ${task.text}</label>
+          <button class="delete" onclick="deleteTask(${index})">✖</button>
+        `;
+        taskList.appendChild(li);
+      });
+      updateCount();
+    }
+
+    function addTask() {
+      const text = taskInput.value.trim();
+      if (text) {
+        tasks.push({ text, completed: false });
+        taskInput.value = '';
+        saveTasks();
+        renderTasks();
+      }
+    }
+
+    function toggleComplete(index) {
+      tasks[index].completed = !tasks[index].completed;
+      saveTasks();
+      renderTasks();
+    }
+
+    function deleteTask(index) {
+      tasks.splice(index, 1);
+      saveTasks();
+      renderTasks();
+    }
+
+    function clearCompleted() {
+      tasks = tasks.filter(t => !t.completed);
+      saveTasks();
+      renderTasks();
+    }
+
+    function updateCount() {
+      const active = tasks.filter(t => !t.completed).length;
+      taskCount.textContent = `${active} task${active !== 1 ? 's' : ''} left`;
+    }
+
+    function filterTasks(type) {
+      renderTasks(type);
+    }
+
+    taskInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') addTask();
+    });
+
+    renderTasks();
+  </script>
+</body>
+</html>
